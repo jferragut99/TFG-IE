@@ -1,0 +1,721 @@
+---
+title: "Análisis Inferencial"
+output: html_document
+---
+
+### Análisis Inferencial
+
+```{r}
+library(rstatix)
+library(reshape)
+library(tidyverse)
+library(dplyr)
+library(ggpubr)
+library(plyr)
+library(datarium)
+library(ggplot2)
+library(nortest)
+library("readxl")
+library(outliers)
+suppressPackageStartupMessages(library(car)) 
+```
+
+
+
+
+```{r}
+datos_Descriptivo <- read_excel("AnalisisDescriptivo.xlsx")
+mujeres <- datos_Descriptivo[datos_Descriptivo$Sexo=="Mujer",]
+hombres <- datos_Descriptivo[datos_Descriptivo$Sexo=="Hombre",]
+```
+
+
+### Mujeres
+
+
+#### Atención: 
+
+
+```{r}
+length(mujeres$Atencion_num[mujeres$Tiempo=="T1" & mujeres$Grupo=="Control"])
+length(mujeres$Atencion_num[mujeres$Tiempo=="T1" & mujeres$Grupo=="Intervencion"])
+```
+
+```{r}
+#veamos la normalidad de las puntuaciones en atención
+lillie.test(mujeres$Atencion_num[mujeres$Tiempo=="T1" & mujeres$Grupo=="Control"])
+lillie.test(mujeres$Atencion_num[mujeres$Tiempo=="T1" & mujeres$Grupo=="Intervencion"])
+lillie.test(mujeres$Atencion_num[mujeres$Tiempo=="T3" & mujeres$Grupo=="Control"])
+lillie.test(mujeres$Atencion_num[mujeres$Tiempo=="T3" & mujeres$Grupo=="Intervencion"])
+```
+
+Únicamente en el grupo control en T1 el p-valor es muy pequeño (0.02), y nos permite rechazar que la muestra provenga de una población normal. En todos los demás casos no podemos rechazar y por tanto asumimos que sí proviene de una normal, es decir, aceptamos la atención de las mujeres del grupo control en T3 y del grupo intervención en T1 y T3 provienen de una normal.
+
+
+
+#T1 control vs T1 intervención: 
+
+Como la atención en el grupo control en T1 no proviene de una normal, no provienen ambas poblaciones involucradas de una distribución normal. Además no se trata de dos muestras grandes(~40) (18,101). Hacemos entonces el test no paramétrico de Mann-Whitney, puesto que se trata de dos muestras independientes.
+
+```{r}
+#T1-T1: test de Mann-Whitney (contraste 2 medias muestras independientes)
+wilcox.test(mujeres$Atencion_num[mujeres$Tiempo=="T1" & mujeres$Grupo=="Control"],mujeres$Atencion_num[mujeres$Tiempo=="T1" & mujeres$Grupo=="Intervencion"])
+```
+
+
+#T1 control vs T3 control: 
+
+Como no provienen ambas poblaciones involucradas de una distribución normal, ni tampoco son dos muestras grandes (18), hacemos el test no paramétrico de Wilcoxon, puesto que se trata de dos muestras emparejadas.
+
+```{r}
+#T1-T3 control: Test de Wilcoxon (contraste 2 medias muestras emparejadas)
+wilcox.test(mujeres$Atencion_num[mujeres$Tiempo=="T1" & mujeres$Grupo=="Control"],mujeres$Atencion_num[mujeres$Tiempo=="T3" & mujeres$Grupo=="Control"],paired = TRUE)
+```
+El mensaje de advertencia nos avisa de que las muestras han contenido valores iguales, por lo que el p-valor obtenido no es exacto. Como el p-valor obtenido (0.6022) no es cercano al nivel de significación deseado, no debemos preocuparnos por eso.
+
+
+
+#T3 control vs T3 intervencion:
+
+Como las poblaciones involucradas siguen distribuciones normales podemos aplicar el test t.
+
+```{r}
+#T3-T3: t-test (contraste 2 medias muestras independientes)
+#como las muestras son independientes veamos las varianzas poblacionales primero
+var.test(mujeres$Atencion_num[mujeres$Tiempo=="T3" & mujeres$Grupo=="Control"],mujeres$Atencion_num[mujeres$Tiempo=="T3" & mujeres$Grupo=="Intervencion"])#ya que las variables son normales
+#Como el p-valor del test para la varianza es mayor que 0.05, aceptamos que las dos varianzas son iguales.
+
+t.test(mujeres$Atencion_num[mujeres$Tiempo=="T3" & mujeres$Grupo=="Control"],mujeres$Atencion_num[mujeres$Tiempo=="T3" & mujeres$Grupo=="Intervencion"],var.equal = TRUE)
+```
+
+#T1-T2-T3 intervención: 
+
+Aplicaremos el Repeated Measures of ANOVA, puesto que tenemos  la medición de las mismas variables respuesta en los mismos individuos en diferentes tiempos. Para ello deben cumplirse los 3 supuestos siguientes:
+ 
+1.- Sin valores atípicos significativos
+ 
+```{r}
+mujeres_I <- mujeres[mujeres$Grupo=="Intervencion",] #mujeres del intervención
+pl<-ggplot(mujeres_I, aes(x=Tiempo, y=Atencion_num))
+pl+geom_boxplot(aes(fill=factor(Tiempo)))+
+  geom_jitter(shape=10,
+              position=position_jitter(),
+              alpha = 0.6)
+  
+boxplot(Atencion_num ~ Tiempo, data = mujeres_I) 
+stripchart(mujeres_I$Atencion_num ~ mujeres_I$Tiempo, vertical = TRUE, method = "jitter",
+           pch = 19, add = TRUE, col = 1:length(levels(chickwts$feed)))
+```
+
+Según el diagrama de caja, se detectó un valor atípico en el conjunto de datos, específicamente en T2. A continuación lo detectamos:
+
+```{r}
+outlier<-mujeres_I %>%
+group_by(Tiempo) %>%
+identify_outliers(Atencion_num)
+data.frame(outlier)
+```
+
+Así, eliminamos dicha observación para realizar el test:
+
+```{r}
+#seleccionamos solamente las variables numéricas, el código y el tiempo
+mujeres1 <- mujeres_I[,c(2,14,16,18,20)]
+names (mujeres1)[1] = "Codigo"
+#eliminamos esa observación en los 3 tiempos que aparece
+mujeres2<-mujeres1[mujeres1$Codigo!="EFF16",]
+```
+
+
+2.- Supuesto de normalidad
+
+La variable dependiente debe distribuirse normalmente en cada celda del diseño.
+Veamos el gráfico QQ para ver la normalidad:
+
+```{r}
+qqPlot(mujeres2$Atencion_num[mujeres2$Tiempo=="T1"])
+qqPlot(mujeres2$Atencion_num[mujeres2$Tiempo=="T2"])
+qqPlot(mujeres2$Atencion_num[mujeres2$Tiempo=="T3"])
+```
+De los gráficos anteriores, como todos los puntos caen aproximadamente a lo largo de la línea de referencia y dentro del intervalo de confianza, podemos suponer normalidad en todos los tiempos.
+
+
+Apliquemos ahora el test de Kolmogorov-Smirnov-Lilliefors (muestra de 100 individuos para cada tiempo) para comprobar:
+
+```{r}
+lillie.test(mujeres2$Atencion_num[mujeres2$Tiempo=="T1"])
+lillie.test(mujeres2$Atencion_num[mujeres2$Tiempo=="T2"])
+lillie.test(mujeres2$Atencion_num[mujeres2$Tiempo=="T3"])
+```
+Basado en el análisis de Lilliefors en los tiempos T2 y T3, no se observó normalidad, pero la ANOVA es robusta frente a este incumplimiento, el error de tipo I no aumenta.
+
+
+3.- Suposición de esfericidad y ANOVA:
+
+La varianza de las diferencias de las medidas deben ser iguales.
+```{r}
+res<-anova_test(data=mujeres2,dv=Atencion_num,wid=Codigo,within=Tiempo) 
+get_anova_table(res) 
+```
+La puntuación en atención del conjunto de datos no fue significativamente diferente en los diferentes momentos. 
+
+F: indica que estamos comparando con una distribución F (F-test); (1.8, 177.85) indica los grados de libertad en el numerador (DFn) y el denominador (DFd), respectivamente; 0.378 indica el valor del estadístico F obtenido.
+p: especifica el p-valor.
+ges: es el tamaño del efecto generalizado (cantidad de variabilidad debida al factor dentro de los sujetos).
+
+
+
+Post-hoc tests:
+```{r}
+#comparación por pares
+pair<-mujeres2 %>% 
+pairwise_t_test( Atencion_num~Tiempo,paired=TRUE, p.adjust.method = "bonferroni" ) 
+data.frame(pair) 
+```
+Todas las diferencias por pares probadas entre los puntos de tiempo no son estadísticamente significativas.
+
+
+#### Claridad: 
+
+```{r}
+#veamos la normalidad
+lillie.test(mujeres$Claridad_num[mujeres$Tiempo=="T1" & mujeres$Grupo=="Control"])
+lillie.test(mujeres$Claridad_num[mujeres$Tiempo=="T1" & mujeres$Grupo=="Intervencion"])
+lillie.test(mujeres$Claridad_num[mujeres$Tiempo=="T3" & mujeres$Grupo=="Control"])
+lillie.test(mujeres$Claridad_num[mujeres$Tiempo=="T3" & mujeres$Grupo=="Intervencion"])
+```
+Como todos los p-valores son elevados asumimos que todas provienen de una distribución normal.
+
+
+
+#T1 control vs T1 intervención:
+
+Ambas poblaciones provienen de una distribución normal, aplicamos entonces el test t.
+```{r}
+#Veamos las varianzas poblacionales primero
+var.test(mujeres$Claridad_num[mujeres$Tiempo=="T1" & mujeres$Grupo=="Control"],mujeres$Claridad_num[mujeres$Tiempo=="T1" & mujeres$Grupo=="Intervencion"])#ya que las variables son normales
+#Como el p-valor del test para la varianza es grande, aceptamos que las dos varianzas son iguales.
+
+#T1-T1: test t (contraste 2 medias muestras independientes)
+t.test(mujeres$Claridad_num[mujeres$Tiempo=="T1" & mujeres$Grupo=="Control"],mujeres$Claridad_num[mujeres$Tiempo=="T1" & mujeres$Grupo=="Intervencion"],var.equal=TRUE)
+```
+
+
+
+
+#T1 control vs T3 control:
+
+Como ambas poblaciones provienen de una distribución normal, aplicamos el test t
+```{r}
+#T1-T3 control: test t (contraste 2 medias muestras emparejadas)
+t.test(mujeres$Claridad_num[mujeres$Tiempo=="T1" & mujeres$Grupo=="Control"],mujeres$Claridad_num[mujeres$Tiempo=="T3" & mujeres$Grupo=="Control"],paired = TRUE)
+```
+
+
+
+
+#T3 control vs T3 intervencion:
+
+Como las poblaciones involucradas siguen distribuciones normales podemos aplicar el test t.
+```{r}
+#Como las muestras son independientes veamos las varianzas poblacionales primero
+var.test(mujeres$Claridad_num[mujeres$Tiempo=="T3" & mujeres$Grupo=="Control"],mujeres$Claridad_num[mujeres$Tiempo=="T3" & mujeres$Grupo=="Intervencion"])#ya que las variables son normales
+#Como el p-valor del test para la varianza es grande, aceptamos que las dos varianzas son iguales.
+
+#T3-T3: test t (contraste 2 medias muestras independientes)
+t.test(mujeres$Claridad_num[mujeres$Tiempo=="T3" & mujeres$Grupo=="Control"],mujeres$Claridad_num[mujeres$Tiempo=="T3" & mujeres$Grupo=="Intervencion"],var.equal=TRUE)
+```
+
+#T1-T2-T3 intervención: 
+
+Aplicaremos las medidas repetidas del ANOVA, puesto que tenemos  la medición de las mismas variables respuesta en los mismos individuos en diferentes puntos del tiempo. Para ello deben cumplirse los 3 supuestos siguientes:
+ 
+1.- Sin valores atípicos significativos
+
+```{r}
+mujeres_I <- mujeres[mujeres$Grupo=="Intervencion",] #mujeres del intervención
+pl<-ggplot(mujeres_I, aes(x=Tiempo, y=Claridad_num))
+pl+geom_boxplot(aes(fill=factor(Tiempo)))+
+  geom_jitter(shape=10,
+              position=position_jitter(),
+              alpha = 0.6)
+  
+boxplot(Claridad_num ~ Tiempo, data = mujeres_I) 
+stripchart(mujeres_I$Claridad_num ~ mujeres_I$Tiempo, vertical = TRUE, method = "jitter",
+           pch = 19, add = TRUE, col = 1:length(levels(chickwts$feed)))
+```
+
+A continuación detectamos los outliers:
+
+```{r}
+outlier<-mujeres_I %>%
+group_by(Tiempo) %>%
+identify_outliers(Claridad_num)
+data.frame(outlier)
+```
+Así, eliminamos los 6 individuos que son outliers en algún tiempo para realizar el test:
+
+
+```{r}
+#eliminamos las observaciones en los 3 tiempos que aparecen: eliminamos un total de 18 observaciones
+mujeres2<-mujeres1[mujeres1$Codigo!="ABG11" & mujeres1$Codigo!="APR22" & mujeres1$Codigo!="EFF16" & mujeres1$Codigo!="MBM14" & mujeres1$Codigo!="MMG14" & mujeres1$Codigo!="MMM12",]
+```
+
+2.- Supuesto de normalidad
+
+La variable dependiente debe distribuirse normalmente en cada celda del diseño.
+Veamos el gráfico QQ para ver la normalidad:
+
+```{r}
+qqPlot(mujeres2$Claridad_num[mujeres2$Tiempo=="T1"])
+qqPlot(mujeres2$Claridad_num[mujeres2$Tiempo=="T2"])
+qqPlot(mujeres2$Claridad_num[mujeres2$Tiempo=="T3"])
+```
+De los gráficos anteriores, como todos los puntos caen aproximadamente a lo largo de la línea de referencia y dentro del intervalo de confianza, podemos suponer normalidad en todos los tiempos.
+
+Apliquemos ahora el test de Kolmogorov-Smirnov-Lilliefors (muestra de 95 individuos en cada tiempo) para comprobar:
+
+```{r}
+lillie.test(mujeres2$Claridad_num[mujeres2$Tiempo=="T1"])
+lillie.test(mujeres2$Claridad_num[mujeres2$Tiempo=="T2"])
+lillie.test(mujeres2$Claridad_num[mujeres2$Tiempo=="T3"])
+```
+
+Basado en el análisis de Lilliefors en los tiempos T1 y T2 no se observó normalidad, pero la ANOVA es robusta frente a este incumplimiento, el error de tipo I no aumenta.
+
+
+
+3.- Suposición de esfericidad
+
+La varianza de las diferencias entre las medidas debe ser igual.
+```{r}
+res<-anova_test(data=mujeres2,dv=Claridad_num,wid=Codigo,within=Tiempo) 
+get_anova_table(res) 
+```
+La puntuación en claridad del conjunto de datos fue significativamente diferente en los diferentes momentos. 
+
+Post-hoc test:
+```{r}
+#comparación por pares
+pair<-mujeres2 %>% 
+pairwise_t_test(Claridad_num~Tiempo,paired=TRUE, p.adjust.method = "bonferroni" ) 
+data.frame(pair) 
+```
+Los análisis post-hoc con un ajuste de Bonferroni revelaron que todas las diferencias por pares,excepto T1-T2, entre puntos de tiempo, fueron estadísticamente significativas (p <= 0,05).
+
+
+
+#### Reparación: 
+
+```{r}
+#veamos la normalidad
+lillie.test(mujeres$Reparacion_num[mujeres$Tiempo=="T1" & mujeres$Grupo=="Control"])
+lillie.test(mujeres$Reparacion_num[mujeres$Tiempo=="T1" & mujeres$Grupo=="Intervencion"])
+lillie.test(mujeres$Reparacion_num[mujeres$Tiempo=="T3" & mujeres$Grupo=="Control"])
+lillie.test(mujeres$Reparacion_num[mujeres$Tiempo=="T3" & mujeres$Grupo=="Intervencion"])
+```
+Como todos los p-valores son elevados asumimos que todas provienen de una distribución normal.
+
+
+
+#T1 control vs T1 intervención:
+
+Ambas poblaciones provienen de una distribución normal, aplicamos entonces el test t.
+```{r}
+#como las muestras son independientes veamos las varianzas poblacionales primero
+var.test(mujeres$Reparacion_num[mujeres$Tiempo=="T1" & mujeres$Grupo=="Control"],mujeres$Reparacion_num[mujeres$Tiempo=="T1" & mujeres$Grupo=="Intervencion"])#ya que las variables son normales
+#Como el p-valor del test para la varianza es grande, aceptamos que las dos varianzas son iguales.
+
+t.test(mujeres$Reparacion_num[mujeres$Tiempo=="T1" & mujeres$Grupo=="Control"],mujeres$Reparacion_num[mujeres$Tiempo=="T1" & mujeres$Grupo=="Intervencion"],var.equal=TRUE)
+```
+
+
+#T1 control vs T3 control:
+
+Como ambas poblaciones provienen de una distribución normal, aplicamos el test t
+```{r}
+#T1-T3 control: test t (contraste 2 medias muestras emparejadas) 
+t.test(mujeres$Reparacion_num[mujeres$Tiempo=="T1" & mujeres$Grupo=="Control"],mujeres$Reparacion_num[mujeres$Tiempo=="T3" & mujeres$Grupo=="Control"],paired = TRUE)
+```
+
+
+
+
+#T3 control vs T3 intervencion:
+
+Como las poblaciones involucradas siguen distribuciones normales podemos aplicar el test t.
+```{r}
+#Como las muestras son independientes veamos las varianzas poblacionales primero
+var.test(mujeres$Reparacion_num[mujeres$Tiempo=="T3" & mujeres$Grupo=="Control"],mujeres$Reparacion_num[mujeres$Tiempo=="T3" & mujeres$Grupo=="Intervencion"])#ya que las variables son normales
+#Como el p-valor del test para la varianza es grande, aceptamos que las dos varianzas son iguales.
+
+#T3-T3: test t (contraste 2 medias muestras independientes)
+t.test(mujeres$Reparacion_num[mujeres$Tiempo=="T3" & mujeres$Grupo=="Control"],mujeres$Reparacion_num[mujeres$Tiempo=="T3" & mujeres$Grupo=="Intervencion"],var.equal=TRUE)
+```
+
+#T1-T2-T3 intervención: 
+
+Aplicaremos las medidas repetidas del ANOVA, puesto que tenemos  la medición de las mismas variables respuesta en los mismos individuos en diferentes puntos del tiempo. Para ello deben cumplirse los 3 supuestos siguientes:
+ 
+1.- Sin valores atípicos significativos
+ 
+```{r}
+pl<-ggplot(mujeres_I, aes(x=Tiempo, y=Reparacion_num))
+pl+geom_boxplot(aes(fill=factor(Tiempo)))+
+  geom_jitter(shape=10,
+              position=position_jitter(),
+              alpha = 0.6)
+  
+boxplot(Reparacion_num ~ Tiempo, data = mujeres_I) 
+stripchart(mujeres_I$Reparacion_num ~ mujeres_I$Tiempo, vertical = TRUE, method = "jitter",
+           pch = 19, add = TRUE, col = 1:length(levels(chickwts$feed)))
+```
+Según el diagrama de caja, parece que no se detecta ningún valor atípico en el conjunto de datos. Pasamos a comprobarlo:
+
+```{r}
+outlier<-mujeres_I %>%
+group_by(Tiempo) %>%
+identify_outliers(Reparacion_num)
+data.frame(outlier)
+```
+
+Esto indica que no hay valores atípicos en el conjunto de datos.
+
+```{r}
+mujeres2<-mujeres1
+```
+
+
+
+2.- Supuesto de normalidad
+
+La variable dependiente debe distribuirse normalmente en cada celda del diseño.
+Veamos el gráfico QQ para ver la normalidad:
+```{r}
+qqPlot(mujeres2$Reparacion_num[mujeres2$Tiempo=="T1"])
+qqPlot(mujeres2$Reparacion_num[mujeres2$Tiempo=="T2"])
+qqPlot(mujeres2$Reparacion_num[mujeres2$Tiempo=="T3"])
+```
+Apliquemos ahora el test de Kolmogorov-Smirnov-Lilliefors (muestra de 101 individuos por tiempo) para comprobar:
+
+
+```{r}
+lillie.test(mujeres2$Reparacion_num[mujeres2$Tiempo=="T1"])
+lillie.test(mujeres2$Reparacion_num[mujeres2$Tiempo=="T2"])
+lillie.test(mujeres2$Reparacion_num[mujeres2$Tiempo=="T3"])
+```
+Basado en el análisis de Lilliefors en tiempo T2 no se observó normalidad, pero el ANOVA es robusto frente a este incumplimiento.
+
+
+
+3.- Suposición de esfericidad
+
+La varianza de las diferencias entre los grupos debe ser igual.
+```{r}
+res<-anova_test(data=mujeres1,dv=Reparacion_num,wid=Codigo,within=Tiempo) 
+get_anova_table(res) 
+```
+La puntuación en reparación del conjunto de datos fue significativamente diferente en los diferentes momentos.
+
+
+
+Post-hoc test:
+```{r}
+#comparación por pares
+pair<-mujeres1 %>% 
+pairwise_t_test(Reparacion_num~Tiempo,paired=TRUE, p.adjust.method = "bonferroni" ) 
+data.frame(pair) 
+```
+
+Los análisis post-hoc con un ajuste de Bonferroni revelaron que las diferencias entre el par de los tiempos T2-T3  fue estadísticamente significativa (p <= 0,05).
+
+
+
+
+
+
+### Hombres
+
+#### Atención: 
+
+```{r}
+length(hombres$Atencion_num[hombres$Tiempo=="T1" & hombres$Grupo=="Control"])
+length(hombres$Atencion_num[hombres$Tiempo=="T1" & hombres$Grupo=="Intervencion"])
+```
+
+```{r}
+#veamos la normalidad
+#lillie.test(hombres$Atencion_num[hombres$Tiempo=="T1" & hombres$Grupo=="Control"])#la muestra debe ser mayor a 4
+lillie.test(hombres$Atencion_num[hombres$Tiempo=="T1" & hombres$Grupo=="Intervencion"])
+lillie.test(hombres$Atencion_num[hombres$Tiempo=="T2" & hombres$Grupo=="Intervencion"])
+#lillie.test(hombres$Atencion_num[hombres$Tiempo=="T3" & hombres$Grupo=="Control"])
+lillie.test(hombres$Atencion_num[hombres$Tiempo=="T3" & hombres$Grupo=="Intervencion"])
+```
+Rechazamos entonces que la Atención en los hombres del grupo Intervención siga una normal en T1, pero asumimos que si la siguen en T2 y en T3.
+
+
+#T1 control vs T1 intervención:
+
+Como la atención en el grupo intervención en T1 no proviene de una normal, no provienen ambas poblaciones involucradas de una distribución normal. Además no se trata de dos muestras grandes (2,16). Hacemos entonces el test no paramétrico de Mann-Whitney, puesto que se trata de dos muestras independientes.
+
+```{r}
+#T1-T1: test de Mann-Whitney
+wilcox.test(hombres$Atencion_num[hombres$Tiempo=="T1" & hombres$Grupo=="Control"],hombres$Atencion_num[hombres$Tiempo=="T1" & hombres$Grupo=="Intervencion"])
+```
+
+```{r}
+#T1-T3 control:contraste 2 medias muestras emparejadas (Test de Wilcoxon)
+wilcox.test(hombres$Atencion_num[hombres$Tiempo=="T1" & hombres$Grupo=="Control"],hombres$Atencion_num[hombres$Tiempo=="T3" & hombres$Grupo=="Control"],paired = TRUE)
+```
+
+```{r}
+#T3-T3:contraste 2 medias muestras independientes ( test de Mann-Whitney)
+wilcox.test(hombres$Atencion_num[hombres$Tiempo=="T3" & hombres$Grupo=="Control"],hombres$Atencion_num[hombres$Tiempo=="T3" & hombres$Grupo=="Intervencion"])
+```
+
+#T1-T2-T3 intervención: 
+
+Aplicaremos las medidas repetidas del ANOVA, puesto que tenemos  la medición de las mismas variables respuesta en los mismos individuos en diferentes puntos del tiempo. Para ello deben cumplirse los 3 supuestos siguientes:
+
+1.- Sin valores atípicos significativos
+ 
+```{r}
+hombres_I <- hombres[hombres$Grupo=="Intervencion",] #hombres del intervención
+pl<-ggplot(hombres_I, aes(x=Tiempo, y=Atencion_num))
+pl+geom_boxplot(aes(fill=factor(Tiempo)))+
+  geom_jitter(shape=10,
+              position=position_jitter(),
+              alpha = 0.6)
+  
+boxplot(Atencion_num ~ Tiempo, data = hombres_I) 
+stripchart(hombres_I$Atencion_num ~ hombres_I$Tiempo, vertical = TRUE, method = "jitter",
+           pch = 19, add = TRUE, col = 1:length(levels(chickwts$feed)))
+```
+Según el diagrama de caja, no se ve ningún valor atípico en el conjunto de datos. Comprobémoslo:
+
+```{r}
+outlier <- hombres_I %>%
+group_by(Tiempo) %>%
+identify_outliers(Atencion_num)
+data.frame(outlier)
+```
+De esta manera hemos encontrado la presencia de un outlier en el tiempo T2. Eliminamos por tanto dicha observación de los 3 tiempos en los que aparecen para realizar el test:
+
+
+```{r}
+#seleccionamos solamente las variables numéricas, el código y el tiempo
+hombres1 <- hombres_I[,c(2,14,16,18,20)]
+names (hombres1)[1] = "Codigo"
+#eliminamos esa observación en los 3 tiempos que aparece
+hombres2<-hombres1[hombres1$Codigo!="ITL07",]
+```
+
+2.- Supuesto de normalidad
+
+La variable dependiente debe distribuirse normalmente en cada celda del diseño.
+
+Como nuestra muestra es de 15 en cada tiempo, aplicamos el test de Shapiro-Wilk:
+```{r}
+normality<-hombres2 %>%
+group_by(Tiempo) %>%
+shapiro_test(Atencion_num)
+data.frame(normality)
+```
+Los datos se distribuyen normalmente en cada punto de tiempo según la prueba de Shapiro-Wilk.
+
+
+3.- Suposición de esfericidad
+
+La varianza de las diferencias entre los grupos debe ser igual.
+```{r}
+res<-anova_test(data=hombres2,dv=Atencion_num,wid=Codigo,within=Tiempo) 
+get_anova_table(res) 
+```
+La puntuación en atención del conjunto de datos no fue significativamente diferente en los diferentes momentos. 
+
+```{r}
+#comparación por pares
+pair <- hombres2 %>% 
+pairwise_t_test(Atencion_num~Tiempo,paired=TRUE, p.adjust.method = "bonferroni" ) 
+data.frame(pair) 
+```
+Los análisis post-hoc con un ajuste de Bonferroni revelaron que las diferencias por pares probadas entre los puntos de tiempo no son estadísticamente significativas.
+
+
+
+#### Claridad: 
+
+```{r}
+#veamos la normalidad
+lillie.test(hombres$Claridad_num[hombres$Tiempo=="T1" & hombres$Grupo=="Intervencion"])
+lillie.test(hombres$Claridad_num[hombres$Tiempo=="T3" & hombres$Grupo=="Intervencion"])
+lillie.test(hombres$Claridad_num[hombres$Tiempo=="T2" & hombres$Grupo=="Intervencion"])
+```
+Asumimos que la Claridad en los hombres del grupo Intervención siguen una distribución normal en T1, T2 y T3
+
+```{r}
+#T1-T1: test de Mann-Whitney
+wilcox.test(hombres$Claridad_num[hombres$Tiempo=="T1" & hombres$Grupo=="Control"],hombres$Claridad_num[hombres$Tiempo=="T1" & hombres$Grupo=="Intervencion"])
+```
+
+```{r}
+#T1-T3 control:contraste 2 medias muestras emparejadas (Test de Wilcoxon)
+wilcox.test(hombres$Claridad_num[hombres$Tiempo=="T1" & hombres$Grupo=="Control"],hombres$Claridad_num[hombres$Tiempo=="T3" & hombres$Grupo=="Control"],paired = TRUE)
+```
+
+```{r}
+#T3-T3:contraste 2 medias muestras independientes ( test de Mann-Whitney)
+wilcox.test(hombres$Claridad_num[hombres$Tiempo=="T3" & hombres$Grupo=="Control"],hombres$Claridad_num[hombres$Tiempo=="T3" & hombres$Grupo=="Intervencion"])
+```
+#T1-T2-T3 intervención: 
+
+Aplicaremos el Repeated Measures of ANOVA, puesto que tenemos  la medición de las mismas variables respuesta en los mismos individuos en diferentes puntos del tiempo. Para ello deben cumplirse los 3 supuestos siguientes:
+
+1.- Sin valores atípicos significativos
+ 
+```{r}
+pl<-ggplot(hombres_I, aes(x=Tiempo, y=Claridad_num))
+pl+geom_boxplot(aes(fill=factor(Tiempo)))+
+  geom_jitter(shape=10,
+              position=position_jitter(),
+              alpha = 0.6)
+  
+boxplot(Claridad_num ~ Tiempo, data = hombres_I) 
+stripchart(hombres_I$Claridad_num ~ hombres_I$Tiempo, vertical = TRUE, method = "jitter",
+           pch = 19, add = TRUE, col = 1:length(levels(chickwts$feed)))
+```
+Según el diagrama de caja, se ven algunos valores atípicos en el conjunto de datos, en T2 y T3. Veamos cuales son:
+
+```{r}
+outlier <- hombres_I %>%
+group_by(Tiempo) %>%
+identify_outliers(Claridad_num)
+data.frame(outlier)
+```
+Hemos encontrado la presencia de 3 outliers. Eliminamos por tanto dichas observaciones de los 3 tiempos en los que aparecen para realizar el test:
+
+
+```{r}
+#eliminamos esas observaciones en los 3 tiempos que aparece (9 obsvervaciones)
+hombres2<-hombres1[hombres1$Codigo!="XRP14" & hombres1$Codigo!="ITL07" & hombres1$Codigo!="LGB08",]
+```
+
+2.- Supuesto de normalidad
+
+La variable dependiente debe distribuirse normalmente en cada celda del diseño. Podemos utilizar la prueba de Shapiro-Wilk para verificarla siempre que la muestra esté compuesta por menos de 50 elementos. 
+Como nuestra muestra es de 13, aplicamos el test de Shapiro-Wilk:
+
+```{r}
+normality<-hombres2 %>%
+group_by(Tiempo) %>%
+shapiro_test(Claridad_num)
+data.frame(normality)
+```
+Los datos se distribuyen normalmente en cada punto de tiempo según la prueba de Shapiro-Wilk, excepto en el tiempo T1. El gráfico QQ es:
+```{r}
+qqPlot(hombres2$Claridad_num[hombres2$Tiempo=="T1"])
+```
+Como todos los puntos caen aproximadamente a lo largo de la línea de referencia y dentro del intervalo de confianza, podemos suponer normalidad en T1.
+
+
+3.- Suposición de esfericidad
+
+La varianza de las diferencias entre los grupos debe ser igual.
+```{r}
+res<-anova_test(data=hombres2,dv=Claridad_num,wid=Codigo,within=Tiempo) 
+get_anova_table(res) 
+```
+La puntuación en atención del conjunto de datos no fue significativamente diferente en los diferentes momentos.
+
+```{r}
+#comparación por pares
+pair <- hombres2 %>% 
+pairwise_t_test(Claridad_num~Tiempo,paired=TRUE, p.adjust.method = "bonferroni" ) 
+data.frame(pair) 
+```
+Los análisis post-hoc con un ajuste de Bonferroni revelaron que las diferencias por pares probadas entre los puntos de tiempo no son estadísticamente significativas.
+
+#### Reparación: 
+```{r}
+#veamos la normalidad
+lillie.test(hombres$Reparacion_num[hombres$Tiempo=="T1" & hombres$Grupo=="Intervencion"])
+lillie.test(hombres$Reparacion_num[hombres$Tiempo=="T2" & hombres$Grupo=="Intervencion"])
+lillie.test(hombres$Reparacion_num[hombres$Tiempo=="T3" & hombres$Grupo=="Intervencion"])
+```
+Rechazamos que los hombres del grupo Intervención sigan una normal en T3 y aceptamos que la sigan en T1 y T2.
+
+```{r}
+#T1-T1: test de Mann-Whitney
+wilcox.test(hombres$Reparacion_num[hombres$Tiempo=="T1" & hombres$Grupo=="Control"],hombres$Reparacion_num[hombres$Tiempo=="T1" & hombres$Grupo=="Intervencion"])
+```
+
+```{r}
+#T1-T3 control:contraste 2 medias muestras emparejadas (Test de Wilcoxon)
+wilcox.test(hombres$Reparacion_num[hombres$Tiempo=="T1" & hombres$Grupo=="Control"],hombres$Reparacion_num[hombres$Tiempo=="T3" & hombres$Grupo=="Control"],paired = TRUE)
+```
+```{r}
+#T3-T3:contraste 2 medias muestras independientes ( test de Mann-Whitney)
+wilcox.test(hombres$Reparacion_num[hombres$Tiempo=="T3" & hombres$Grupo=="Control"],hombres$Reparacion_num[hombres$Tiempo=="T3" & hombres$Grupo=="Intervencion"])
+```
+#T1-T2-T3 intervención: 
+
+Aplicaremos las medidas repetidas del ANOVA, puesto que tenemos  la medición de las mismas variables respuesta en los mismos individuos en diferentes puntos del tiempo. Para ello deben cumplirse los 3 supuestos siguientes:
+
+1.- Sin valores atípicos significativos
+ 
+```{r}
+pl<-ggplot(hombres_I, aes(x=Tiempo, y=Reparacion_num))
+pl+geom_boxplot(aes(fill=factor(Tiempo)))+
+  geom_jitter(shape=10,
+              position=position_jitter(),
+              alpha = 0.6)
+  
+boxplot(Reparacion_num ~ Tiempo, data = hombres_I) 
+stripchart(hombres_I$Reparacion_num ~ hombres_I$Tiempo, vertical = TRUE, method = "jitter",
+           pch = 19, add = TRUE, col = 1:length(levels(chickwts$feed)))
+```
+Según el diagrama de caja, se ve algún valor atípico en T1 y en T3, en el conjunto de datos. Veamos cuales son:
+
+```{r}
+outlier <- hombres_I %>%
+group_by(Tiempo) %>%
+identify_outliers(Reparacion_num)
+data.frame(outlier)
+```
+Hemos encontrado la presencia de 3 outliers. Eliminamos por tanto dichas observaciones de los 3 tiempos en los que aparecen para realizar el test:
+
+
+```{r}
+#eliminamos esas observaciones en los 3 tiempos que aparecen (en total 9 observaciones)
+hombres2<-hombres1[hombres1$Codigo!="MEP09" & hombres1$Codigo!="ITL07" & hombres1$Codigo!="XRP14",]
+```
+
+2.- Supuesto de normalidad
+
+La variable dependiente debe distribuirse normalmente en cada celda del diseño. Podemos utilizar la prueba de Shapiro-Wilk para verificarla siempre que la muestra esté compuesta por menos de 50 elementos.
+Como nuestra muestra es de 13, aplicamos el test de Shapiro-Wilk:
+
+```{r}
+normality<-hombres2 %>%
+group_by(Tiempo) %>%
+shapiro_test(Reparacion_num)
+data.frame(normality)
+```
+Los datos se distribuyen normalmente en cada punto de tiempo según la prueba de Shapiro-Wilk.
+
+3.- Suposición de esfericidad
+
+La varianza de las diferencias entre los grupos debe ser igual.
+```{r}
+res<-anova_test(data=hombres2,dv=Reparacion_num,wid=Codigo,within=Tiempo) 
+get_anova_table(res) 
+```
+La puntuación en atención del conjunto de datos fue significativamente diferente en los diferentes momentos. 
+
+```{r}
+#comparación por pares
+pair <- hombres2 %>% 
+pairwise_t_test(Reparacion_num~Tiempo,paired=TRUE, p.adjust.method = "bonferroni" ) 
+data.frame(pair) 
+```
+Los análisis post-hoc con un ajuste de Bonferroni revelaron que las diferencias de medias en T1-T2 son estadísticamente significativas.

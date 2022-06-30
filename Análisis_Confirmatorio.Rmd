@@ -1,0 +1,121 @@
+---
+title: "Análisis Confirmatorio clásico"
+output: html_document
+---
+
+### AFC
+```{r}
+library("readxl")
+```
+
+```{r}
+PorPreguntasT1T2T3 <- read_excel("PorPreguntasT1T2T3.xlsx")
+PorPreguntasT1 <- read_excel("PorPreguntasT1.xlsx")
+PorPreguntasT2 <- read_excel("PorPreguntasT2.xlsx")
+PorPreguntasT3 <- read_excel("PorPreguntasT3.xlsx")
+```
+
+
+```{r}
+#En T1
+vind <- grep("item", colnames(PorPreguntasT1)) ## items
+Rmot <- na.omit(PorPreguntasT1[, vind])
+mot_model <- '
+  Atencion  =~ item1 + item2 + item3 + item4 + item5 + item6 +
+                item7 + item8  
+  Claridad =~  item9 + item10 + item11 + item12 + item13 + 
+                item14 + item15 + item16
+  Reparacion =~ item17 + item18 + item19 + item20 + item21 + 
+                item22 + item23 + item24'
+fitMot <- lavaan::cfa(mot_model, data = Rmot,
+                      ordered = names(Rmot))
+
+library("semPlot")
+  semPaths(fitMot, what = "est", edge.label.cex = 0.7,
+    edge.color = 1, esize = 1, sizeMan = 4.5, asize = 2.5,
+    intercepts = FALSE, rotation = 4, thresholdColor = "red",
+    mar = c(1, 5, 1.5, 5), fade = FALSE, nCharNodes = 4)
+```
+
+```{r}
+summary(fitMot)
+```
+
+
+```{r}
+#En T2 hay un WARNING
+vind <- grep("item", colnames(PorPreguntasT2)) ## items
+Rmot <- na.omit(PorPreguntasT2[, vind])
+mot_model <- '
+  Atencion  =~ item1 + item2 + item3 + item4 + item5 + item6 +
+                item7 + item8  
+  Claridad =~  item9 + item10 + item11 + item12 + item13 + 
+                item14 + item15 + item16
+  Reparacion =~ item17 + item18 + item19 + item20 + item21 + 
+                item22 + item23 + item24'
+fitMot <- lavaan::cfa(mot_model, data = Rmot,
+                      ordered = names(Rmot))
+
+library("semPlot")
+  semPaths(fitMot, what = "est", edge.label.cex = 0.7,
+    edge.color = 1, esize = 1, sizeMan = 4.5, asize = 2.5,
+    intercepts = FALSE, rotation = 4, thresholdColor = "red",
+    mar = c(1, 5, 1.5, 5), fade = FALSE, nCharNodes = 4)
+```
+
+```{r}
+summary(fitMot)
+```
+
+
+
+```{r}
+#En T3 hay un WARNING
+vind <- grep("item", colnames(PorPreguntasT3)) ## items
+Rmot <- na.omit(PorPreguntasT3[, vind])
+mot_model <- '
+  Atencion  =~ item1 + item2 + item3 + item4 + item5 + item6 +
+                item7 + item8  
+  Claridad =~  item9 + item10 + item11 + item12 + item13 + 
+                item14 + item15 + item16
+  Reparacion =~ item17 + item18 + item19 + item20 + item21 + 
+                item22 + item23 + item24'
+fitMot <- lavaan::cfa(mot_model, data = Rmot,
+                      ordered = names(Rmot))
+
+library("semPlot")
+  semPaths(fitMot, what = "est", edge.label.cex = 0.7,
+    edge.color = 1, esize = 1, sizeMan = 4.5, asize = 2.5,
+    intercepts = FALSE, rotation = 4, thresholdColor = "red",
+    mar = c(1, 5, 1.5, 5), fade = FALSE, nCharNodes = 4)
+```
+
+
+```{r}
+summary(fitMot)
+```
+
+```{r}
+#En T1, T2 y T3
+vind <- grep("item", colnames(PorPreguntasT1T2T3)) ## items
+Rmot <- na.omit(PorPreguntasT1T2T3[, vind])
+mot_model <- '
+  Atencion  =~ item1 + item2 + item3 + item4 + item5 + item6 +
+                item7 + item8  
+  Claridad =~  item9 + item10 + item11 + item12 + item13 + 
+                item14 + item15 + item16
+  Reparacion =~ item17 + item18 + item19 + item20 + item21 + 
+                item22 + item23 + item24'
+fitMot <- lavaan::cfa(mot_model, data = Rmot,
+                      ordered = names(Rmot))
+library("semPlot")
+  semPaths(fitMot, what = "est", edge.label.cex = 0.7,
+    edge.color = 1, esize = 1, sizeMan = 4.5, asize = 2.5,
+    intercepts = FALSE, rotation = 4, thresholdColor = "red",
+    mar = c(1, 5, 1.5, 5), fade = FALSE, nCharNodes = 4)
+```
+
+```{r}
+summary(fitMot,fit.measures=TRUE)
+```
+

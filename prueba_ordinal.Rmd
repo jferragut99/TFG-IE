@@ -1,0 +1,316 @@
+---
+title: "prueba"
+output: html_document
+---
+```{r}
+library("ordinal")
+library("readxl")
+library(mlogit) #2020
+```
+
+```{r}
+datos <- read_excel("T1T2T3(darrera).xlsx")
+```
+
+```{r}
+#ATENCIÓN
+datos1 <- datos[,c(8,10,22,24)]
+datos1$Atencion_cat.T1 <- as.factor(datos1$Atencion_cat.T1)
+#reordenamos los niveles, ya que siguen un cierto orden P<A<D
+datos1$Atencion_cat.T1 <- factor(datos1$Atencion_cat.T1,levels = c("Poca","Adecuada","Demasiada"))
+datos1$Atencion_cat.T3 <- as.factor(datos1$Atencion_cat.T3)
+datos1$Atencion_cat.T3 <- factor(datos1$Atencion_cat.T3,levels = c("Poca","Adecuada","Demasiada"))
+datos1$Sexo <- as.factor(datos1$Sexo)
+datos1$Grupo <- as.factor(datos1$Grupo)
+```
+
+#TEMA5CATE
+```{r}
+#se considera un análisis descriptivo
+attach(datos1)
+table(Atencion_cat.T3)
+table(Atencion_cat.T1)
+table(Sexo)
+table(Grupo)
+```
+
+Se aplica un modelo de regresión multinomial. Se usa el comando mlogit.data para expandir el formato de los datos. Así, para cada observación de la base de datos original, se obtienen 3 observaciones: una para cada una de los valores de la variable Atencion_cat.T3.
+Usando el nuevo formato, el valor de la Atencion_cat.T3 aparece en la variable alt, y si el nivel es el que tiene la persona o no se indica como TRUE o FALSE.
+
+```{r}
+# Con mlogit.data se expanden los datos
+datos2 <- mlogit.data(datos1, varying=NULL, choice="Atencion_cat.T3", shape="wide")
+```
+
+```{r}
+ # Atencion_cat.T3 Poca es el nivel de referencia
+mlogit.model = mlogit(Atencion_cat.T3 ~ 0| Atencion_cat.T1+Sexo+Grupo, data=datos2, reflevel="Poca") 
+summary(mlogit.model)
+```
+
+
+
+```{r}
+#CLARIDAD
+datos1 <- datos[,c(8,10,30,32)]
+datos1$Claridad_cat.T1 <- as.factor(datos1$Claridad_cat.T1)
+#reordenamos los niveles, ya que siguen un cierto orden P<A<E
+datos1$Claridad_cat.T1 <- factor(datos1$Claridad_cat.T1,levels = c("Poca","Adecuada","Excelente"))
+datos1$Claridad_cat.T3 <- as.factor(datos1$Claridad_cat.T3)
+datos1$Claridad_cat.T3 <- factor(datos1$Claridad_cat.T3,levels = c("Poca","Adecuada","Excelente"))
+datos1$Sexo <- as.factor(datos1$Sexo)
+datos1$Grupo <- as.factor(datos1$Grupo)
+```
+
+```{r}
+#se considera un análisis descriptivo
+attach(datos1)
+table(Claridad_cat.T3)
+table(Claridad_cat.T1)
+table(Sexo)
+table(Grupo)
+```
+```{r}
+# Con mlogit.data se expanden los datos
+datos2 <- mlogit.data(datos1, varying=NULL, choice="Claridad_cat.T3", shape="wide")
+```
+
+```{r}
+ # Claridad_cat.T3 Poca es el nivel de referencia
+mlogit.model = mlogit(Claridad_cat.T3 ~ 0| Claridad_cat.T1+Sexo+Grupo, data=datos2, reflevel="Poca") 
+summary(mlogit.model)
+```
+
+
+
+```{r}
+#REPARACIÓN
+datos1 <- datos[,c(8,10,38,40)]
+datos1$Reparacion_cat.T1 <- as.factor(datos1$Reparacion_cat.T1)
+#reordenamos los niveles, ya que siguen un cierto orden P<A<E
+datos1$Reparacion_cat.T1 <- factor(datos1$Reparacion_cat.T1,levels = c("Poca","Adecuada","Excelente"))
+datos1$Reparacion_cat.T3 <- as.factor(datos1$Reparacion_cat.T3)
+datos1$Reparacion_cat.T3 <- factor(datos1$Reparacion_cat.T3,levels = c("Poca","Adecuada","Excelente"))
+datos1$Sexo <- as.factor(datos1$Sexo)
+datos1$Grupo <- as.factor(datos1$Grupo)
+```
+
+```{r}
+#se considera un análisis descriptivo
+attach(datos1)
+table(Reparacion_cat.T3)
+table(Reparacion_cat.T1)
+table(Sexo)
+table(Grupo)
+```
+```{r}
+# Con mlogit.data se expanden los datos
+datos2 <- mlogit.data(datos1, varying=NULL, choice="Reparacion_cat.T3", shape="wide")
+```
+
+```{r}
+ # Reparacion_cat.T3 Poca es el nivel de referencia
+mlogit.model = mlogit(Reparacion_cat.T3 ~ 0| Reparacion_cat.T1+Sexo+Grupo, data=datos2, reflevel="Poca") 
+summary(mlogit.model)
+```
+
+
+#Veamos dentro del grupo intervención, cómo se explican cada una de las áreas en T3 a partir de ellas mismas en T2, junto con el Sexo
+```{r}
+#ATENCIÓN
+Intervencion <- datos[datos$Grupo=="Intervencion",]
+datos1 <- Intervencion[,c(10,23,24)]
+datos1$Atencion_cat.T2 <- as.factor(datos1$Atencion_cat.T2)
+#reordenamos los niveles, ya que siguen un cierto orden P<A<D
+datos1$Atencion_cat.T2 <- factor(datos1$Atencion_cat.T2,levels = c("Poca","Adecuada","Demasiada"))
+datos1$Atencion_cat.T3 <- as.factor(datos1$Atencion_cat.T3)
+datos1$Atencion_cat.T3 <- factor(datos1$Atencion_cat.T3,levels = c("Poca","Adecuada","Demasiada"))
+datos1$Sexo <- as.factor(datos1$Sexo)
+```
+
+#TEMA5CATE
+```{r}
+#se considera un análisis descriptivo
+attach(datos1)
+table(Atencion_cat.T3)
+table(Atencion_cat.T2)
+table(Sexo)
+```
+Se aplica un modelo de regresión multinomial. Se usa el comando mlogit.data para expandir el formato de los datos. Así, para cada observación de la base de datos original, se obtienen 3 observaciones: una para cada una de los valores de la variable Atencion_cat.T3.
+Usando el nuevo formato, el valor de la Atencion_cat.T3 aparece en la variable alt, y si el nivel es el que tiene la persona o no se indica como TRUE o FALSE.
+```{r}
+# Con mlogit.data se expanden los datos
+datos2 <- mlogit.data(datos1, varying=NULL, choice="Atencion_cat.T3", shape="wide")
+```
+```{r}
+ # Atencion_cat.T3 Poca es el nivel de referencia
+mlogit.model = mlogit(Atencion_cat.T3 ~ 0| Atencion_cat.T2+Sexo, data=datos2, reflevel="Poca") 
+summary(mlogit.model)
+```
+
+
+```{r}
+#CLARIDAD
+datos1 <- Intervencion[,c(10,31,32)]
+datos1$Claridad_cat.T2 <- as.factor(datos1$Claridad_cat.T2)
+#reordenamos los niveles, ya que siguen un cierto orden P<A<E
+datos1$Claridad_cat.T2 <- factor(datos1$Claridad_cat.T2,levels = c("Poca","Adecuada","Excelente"))
+datos1$Claridad_cat.T3 <- as.factor(datos1$Claridad_cat.T3)
+datos1$Claridad_cat.T3 <- factor(datos1$Claridad_cat.T3,levels = c("Poca","Adecuada","Excelente"))
+datos1$Sexo <- as.factor(datos1$Sexo)
+```
+
+#TEMA5CATE
+```{r}
+#se considera un análisis descriptivo
+attach(datos1)
+table(Claridad_cat.T3)
+table(Claridad_cat.T2)
+table(Sexo)
+```
+Se aplica un modelo de regresión multinomial. Se usa el comando mlogit.data para expandir el formato de los datos. Así, para cada observación de la base de datos original, se obtienen 3 observaciones: una para cada una de los valores de la variable Claridad_cat.T3.
+Usando el nuevo formato, el valor de la Claridad_cat.T3 aparece en la variable alt, y si el nivel es el que tiene la persona o no se indica como TRUE o FALSE.
+```{r}
+# Con mlogit.data se expanden los datos
+datos2 <- mlogit.data(datos1, varying=NULL, choice="Claridad_cat.T3", shape="wide")
+```
+```{r}
+ # Claridad_cat.T3 Poca es el nivel de referencia
+mlogit.model = mlogit(Claridad_cat.T3 ~ 0| Claridad_cat.T2+Sexo, data=datos2, reflevel="Poca") 
+summary(mlogit.model)
+```
+
+
+```{r}
+#REPARACIÓN
+datos1 <- Intervencion[,c(10,39,40)]
+datos1$Reparacion_cat.T2 <- as.factor(datos1$Reparacion_cat.T2)
+#reordenamos los niveles, ya que siguen un cierto orden P<A<E
+datos1$Reparacion_cat.T2 <- factor(datos1$Reparacion_cat.T2,levels = c("Poca","Adecuada","Excelente"))
+datos1$Reparacion_cat.T3 <- as.factor(datos1$Reparacion_cat.T3)
+datos1$Reparacion_cat.T3 <- factor(datos1$Reparacion_cat.T3,levels = c("Poca","Adecuada","Excelente"))
+datos1$Sexo <- as.factor(datos1$Sexo)
+summary(datos1)
+```
+
+#TEMA5CATE
+```{r}
+#se considera un análisis descriptivo
+attach(datos1)
+table(Reparacion_cat.T3)
+table(Reparacion_cat.T2)
+table(Sexo)
+```
+Se aplica un modelo de regresión multinomial. Se usa el comando mlogit.data para expandir el formato de los datos. Así, para cada observación de la base de datos original, se obtienen 3 observaciones: una para cada una de los valores de la variable Reparacion_cat.T3.
+Usando el nuevo formato, el valor de la Reparacion_cat.T3 aparece en la variable alt, y si el nivel es el que tiene la persona o no se indica como TRUE o FALSE.
+```{r}
+# Con mlogit.data se expanden los datos
+datos2 <- mlogit.data(datos1, varying=NULL, choice="Reparacion_cat.T3", shape="wide")
+```
+```{r}
+ # Claridad_cat.T3 Poca es el nivel de referencia
+mlogit.model = mlogit(Reparacion_cat.T3 ~ 0| Reparacion_cat.T2+Sexo, data=datos2, reflevel="Poca") 
+summary(mlogit.model)
+```
+
+
+
+
+
+#Veamos dentro del grupo intervención, cómo se explican cada una de las áreas en T2 a partir de ellas mismas en T1, junto con el Sexo
+```{r}
+#ATENCIÓN
+Intervencion <- datos[datos$Grupo=="Intervencion",]
+datos1 <- Intervencion[,c(10,23,24)]
+datos1$Atencion_cat.T2 <- as.factor(datos1$Atencion_cat.T2)
+#reordenamos los niveles, ya que siguen un cierto orden P<A<D
+datos1$Atencion_cat.T2 <- factor(datos1$Atencion_cat.T2,levels = c("Poca","Adecuada","Demasiada"))
+datos1$Atencion_cat.T1 <- as.factor(datos1$Atencion_cat.T1)
+datos1$Atencion_cat.T1 <- factor(datos1$Atencion_cat.T1,levels = c("Poca","Adecuada","Demasiada"))
+datos1$Sexo <- as.factor(datos1$Sexo)
+```
+
+#TEMA5CATE
+```{r}
+#se considera un análisis descriptivo
+attach(datos1)
+table(Atencion_cat.T3)
+table(Atencion_cat.T2)
+table(Sexo)
+```
+Se aplica un modelo de regresión multinomial. Se usa el comando mlogit.data para expandir el formato de los datos. Así, para cada observación de la base de datos original, se obtienen 3 observaciones: una para cada una de los valores de la variable Atencion_cat.T3.
+Usando el nuevo formato, el valor de la Atencion_cat.T3 aparece en la variable alt, y si el nivel es el que tiene la persona o no se indica como TRUE o FALSE.
+```{r}
+# Con mlogit.data se expanden los datos
+datos2 <- mlogit.data(datos1, varying=NULL, choice="Atencion_cat.T3", shape="wide")
+```
+```{r}
+ # Atencion_cat.T3 Poca es el nivel de referencia
+mlogit.model = mlogit(Atencion_cat.T3 ~ 0| Atencion_cat.T2+Sexo, data=datos2, reflevel="Poca") 
+summary(mlogit.model)
+```
+
+
+```{r}
+#CLARIDAD
+datos1 <- Intervencion[,c(10,31,32)]
+datos1$Claridad_cat.T2 <- as.factor(datos1$Claridad_cat.T2)
+#reordenamos los niveles, ya que siguen un cierto orden P<A<E
+datos1$Claridad_cat.T2 <- factor(datos1$Claridad_cat.T2,levels = c("Poca","Adecuada","Excelente"))
+datos1$Claridad_cat.T3 <- as.factor(datos1$Claridad_cat.T3)
+datos1$Claridad_cat.T3 <- factor(datos1$Claridad_cat.T3,levels = c("Poca","Adecuada","Excelente"))
+datos1$Sexo <- as.factor(datos1$Sexo)
+```
+
+#TEMA5CATE
+```{r}
+#se considera un análisis descriptivo
+attach(datos1)
+table(Claridad_cat.T3)
+table(Claridad_cat.T2)
+table(Sexo)
+```
+Se aplica un modelo de regresión multinomial. Se usa el comando mlogit.data para expandir el formato de los datos. Así, para cada observación de la base de datos original, se obtienen 3 observaciones: una para cada una de los valores de la variable Claridad_cat.T3.
+Usando el nuevo formato, el valor de la Claridad_cat.T3 aparece en la variable alt, y si el nivel es el que tiene la persona o no se indica como TRUE o FALSE.
+```{r}
+# Con mlogit.data se expanden los datos
+datos2 <- mlogit.data(datos1, varying=NULL, choice="Claridad_cat.T3", shape="wide")
+```
+```{r}
+ # Claridad_cat.T3 Poca es el nivel de referencia
+mlogit.model = mlogit(Claridad_cat.T3 ~ 0| Claridad_cat.T2+Sexo, data=datos2, reflevel="Poca") 
+summary(mlogit.model)
+```
+
+
+```{r}
+#REPARACIÓN
+datos1 <- Intervencion[,c(10,39,40)]
+datos1$Reparacion_cat.T2 <- as.factor(datos1$Reparacion_cat.T2)
+#reordenamos los niveles, ya que siguen un cierto orden P<A<E
+datos1$Reparacion_cat.T2 <- factor(datos1$Reparacion_cat.T2,levels = c("Poca","Adecuada","Excelente"))
+datos1$Reparacion_cat.T3 <- as.factor(datos1$Reparacion_cat.T3)
+datos1$Reparacion_cat.T3 <- factor(datos1$Reparacion_cat.T3,levels = c("Poca","Adecuada","Excelente"))
+datos1$Sexo <- as.factor(datos1$Sexo)
+summary(datos1)
+```
+
+#TEMA5CATE
+```{r}
+#se considera un análisis descriptivo
+attach(datos1)
+table(Reparacion_cat.T3)
+table(Reparacion_cat.T2)
+table(Sexo)
+```
+Se aplica un modelo de regresión multinomial. Se usa el comando mlogit.data para expandir el formato de los datos. Así, para cada observación de la base de datos original, se obtienen 3 observaciones: una para cada una de los valores de la variable Reparacion_cat.T3.
+Usando el nuevo formato, el valor de la Reparacion_cat.T3 aparece en la variable alt, y si el nivel es el que tiene la persona o no se indica como TRUE o FALSE.
+```{r}
+# Con mlogit.data se expanden los datos
+datos2 <- mlogit.data(datos1, varying=NULL, choice="Reparacion_cat.T3", shape="wide")
+```
+```{r}
+ # Claridad_cat.T3 Poca es el nivel de referencia
+mlogit.model = mlogit(Reparacion_cat.T3 ~ 0| Reparacion_cat.T2+Sexo, data=datos2, reflevel="Poca") 
+summary(mlogit.model)
+```

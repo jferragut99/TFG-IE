@@ -1,0 +1,148 @@
+---
+title: "Regresión Multivariada"
+output: html_document
+---
+
+### Regresión multivariada
+```{r}
+library(plotly)
+library(tidyverse)
+library(ggplot2)
+library(dplyr)
+library(scales)
+library("readxl")
+library("lavaan")
+library("semPlot")
+library(semptools)
+```
+
+
+PATH MODEL
+
+```{r}
+datos <- read_excel("T1T2T3(darrera).xlsx")
+Control<-datos[datos$Grupo=="Control",]
+Control_m <- Control[Control$Sexo=="Mujer",]
+Intervencion <- datos[datos$Grupo=="Intervencion",]
+Intervencion_m <- Intervencion[Intervencion$Sexo=="Mujer",]
+```
+
+```{r}
+#Control T1-T3
+mvreg.model <- '
+  Reparacion_num.T3 ~ b11*Reparacion_num.T1 + b12*Claridad_num.T1 + b13*Atencion_num.T1 
+  Claridad_num.T3 ~ b21*Reparacion_num.T1 + b22*Claridad_num.T1 + b23*Atencion_num.T1 
+  Atencion_num.T3 ~ b31*Reparacion_num.T1 + b32*Claridad_num.T1 + b33*Atencion_num.T1'
+fitmvreg2 <- sem(mvreg.model, data = Control)
+p_pa<-semPaths(fitmvreg2, what = "est", edge.label.cex = 1,
+  layout = "tree", residuals = FALSE, edge.color = 1,
+  esize = 1, rotation = 3, sizeMan = 8, asize = 2.5,
+  fade = FALSE, optimizeLatRes = TRUE)
+my_curve_list <- c("Claridad_num.T3 ~~ Atencion_num.T1" = 2,"Reparacion_num.T3~~Claridad_num.T1"=-2,"Reparacion_num.T3~~Atencion_num.T1"=1.5,"Atencion_num.T3~~Reparacion_num.T1"=1.5)
+
+my_position_list <- c("Claridad_num.T3 ~ Claridad_num.T1" = .15,"Atencion_num.T3 ~ Reparacion_num.T1" = .25,"Claridad_num.T3 ~ Atencion_num.T1" = .25,"Reparacion_num.T3 ~ Atencion_num.T1" = .30,"Reparacion_num.T3 ~ Claridad_num.T1" = .60)
+
+p_pa2 <- p_pa |> set_curve(my_curve_list) |>
+                  mark_sig(fitmvreg2) |>
+                  set_edge_label_position(my_position_list)
+plot(p_pa2)
+```
+
+```{r}
+parameterestimates(fitmvreg2)
+```
+
+
+```{r}
+#Intervencion T1-T3
+mvreg.model <- '
+  Reparacion_num.T3 ~ b11*Reparacion_num.T1 + b12*Claridad_num.T1 + b13*Atencion_num.T1 
+  Claridad_num.T3 ~ b21*Reparacion_num.T1 + b22*Claridad_num.T1 + b23*Atencion_num.T1 
+  Atencion_num.T3 ~ b31*Reparacion_num.T1 + b32*Claridad_num.T1 + b33*Atencion_num.T1'
+fitmvreg2 <- sem(mvreg.model, data = Intervencion)
+p_pa<-semPaths(fitmvreg2, what = "est", edge.label.cex = 1,
+  layout = "tree", residuals = FALSE, edge.color = 1,
+  esize = 1, rotation = 3, sizeMan = 8, asize = 2.5,
+  fade = FALSE, optimizeLatRes = TRUE)
+
+
+my_curve_list <- c("Claridad_num.T3 ~~ Atencion_num.T1" = 2,"Reparacion_num.T3~~Claridad_num.T1"=-2,"Reparacion_num.T3~~Atencion_num.T1"=1.5,"Atencion_num.T3~~Reparacion_num.T1"=1.5)
+
+my_position_list <- c("Claridad_num.T3 ~ Claridad_num.T1" = .15,"Atencion_num.T3 ~ Reparacion_num.T1" = .25,"Claridad_num.T3 ~ Atencion_num.T1" = .25,"Reparacion_num.T3 ~ Atencion_num.T1" = .30,"Reparacion_num.T3 ~ Claridad_num.T1" = .60)
+
+p_pa2 <- p_pa |> set_curve(my_curve_list) |>
+                  mark_sig(fitmvreg2) |>
+                  set_edge_label_position(my_position_list)
+plot(p_pa2)
+```
+*: p-valor menor que 0.05
+**: p-valor menor que 0.01
+***: p-valor menor que 0.001
+
+```{r}
+parameterestimates(fitmvreg2)
+```
+La contribución es mayor de la propia área (línea 7 y línea 9 pesa más).
+
+
+```{r}
+#Intervencion T1-T2
+mvreg.model <- '
+  Reparacion_num.T2 ~ b11*Reparacion_num.T1 + b12*Claridad_num.T1 + b13*Atencion_num.T1 
+  Claridad_num.T2 ~ b21*Reparacion_num.T1 + b22*Claridad_num.T1 + b23*Atencion_num.T1 
+  Atencion_num.T2 ~ b31*Reparacion_num.T1 + b32*Claridad_num.T1 + b33*Atencion_num.T1'
+fitmvreg2 <- sem(mvreg.model, data = Intervencion)
+p_pa<-semPaths(fitmvreg2, what = "est", edge.label.cex = 1,
+  layout = "tree", residuals = FALSE, edge.color = 1,
+  esize = 1, rotation = 3, sizeMan = 8, asize = 2.5,
+  fade = FALSE, optimizeLatRes = TRUE)
+
+
+my_curve_list <- c("Claridad_num.T2 ~~ Atencion_num.T1" = 2,"Reparacion_num.T2~~Claridad_num.T1"=-2,"Reparacion_num.T2~~Atencion_num.T1"=1.5,"Atencion_num.T2~~Reparacion_num.T1"=1.5)
+
+my_position_list <- c("Claridad_num.T2 ~ Claridad_num.T1" = .15,"Atencion_num.T2 ~ Reparacion_num.T1" = .25,"Claridad_num.T2 ~ Atencion_num.T1" = .25,"Reparacion_num.T2 ~ Atencion_num.T1" = .30,"Reparacion_num.T2 ~ Claridad_num.T1" = .60)
+
+p_pa2 <- p_pa |> set_curve(my_curve_list) |>
+                  mark_sig(fitmvreg2) |>
+                  set_edge_label_position(my_position_list)
+plot(p_pa2)
+```
+```{r}
+parameterestimates(fitmvreg2)
+```
+
+Reparacion en T2 será 0.692 veces la reparacion en T1.
+Si el coeficiente negativo sería: por cada aumento disminuye la explicada.
+
+El modelo de regresión no captura bien, ya que en cada área depende del timepo anterior pero los pesos no son muy altos. No hay un cambio importante.
+
+```{r}
+#Intervencion T1-T2-T3
+mvreg.model <- '
+  Reparacion_num.T2 ~ b11*Reparacion_num.T1 + b12*Claridad_num.T1 + b13*Atencion_num.T1 
+  Claridad_num.T2 ~ b21*Reparacion_num.T1 + b22*Claridad_num.T1 + b23*Atencion_num.T1 
+  Atencion_num.T2 ~ b31*Reparacion_num.T1 + b32*Claridad_num.T1 + b33*Atencion_num.T1
+  Reparacion_num.T3 ~ b41*Reparacion_num.T1 + b42*Claridad_num.T1 + b43*Atencion_num.T1 
+  Claridad_num.T3 ~ b51*Reparacion_num.T1 + b52*Claridad_num.T1 + b53*Atencion_num.T1 
+  Atencion_num.T3 ~ b61*Reparacion_num.T1 + b62*Claridad_num.T1 + b63*Atencion_num.T1
+  Reparacion_num.T3 ~ b71*Reparacion_num.T2 + b72*Claridad_num.T2 + b73*Atencion_num.T2 
+  Claridad_num.T3 ~ b81*Reparacion_num.T2 + b82*Claridad_num.T2 + b83*Atencion_num.T2 
+  Atencion_num.T3 ~ b91*Reparacion_num.T2 + b92*Claridad_num.T2 + b93*Atencion_num.T2
+  '
+fitmvreg2 <- sem(mvreg.model, data = Intervencion)
+p_pa<-semPaths(fitmvreg2, what = "est", edge.label.cex = 1,
+  layout = "tree", residuals = FALSE, edge.color = 1,
+  esize = 1, rotation = 3, sizeMan = 8, asize = 2.5,
+  fade = FALSE, optimizeLatRes = TRUE)
+
+
+my_curve_list <- c("Claridad_num.T2 ~~ Atencion_num.T1" = 2,"Reparacion_num.T2~~Claridad_num.T1"=-2,"Reparacion_num.T2~~Atencion_num.T1"=1.5,"Atencion_num.T2~~Reparacion_num.T1"=1.5)
+
+my_position_list <- c("Claridad_num.T2 ~ Claridad_num.T1" = .15,"Atencion_num.T2 ~ Reparacion_num.T1" = .25,"Claridad_num.T2 ~ Atencion_num.T1" = .25,"Reparacion_num.T2 ~ Atencion_num.T1" = .30,"Reparacion_num.T2 ~ Claridad_num.T1" = .60)
+
+p_pa2 <- p_pa |> set_curve(my_curve_list) |>
+                  mark_sig(fitmvreg2) |>
+                  set_edge_label_position(my_position_list)
+plot(p_pa2)
+```
+

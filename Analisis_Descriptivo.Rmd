@@ -1,0 +1,332 @@
+---
+title: "Análisis Descriptivo"
+output: html_document
+---
+```{r}
+library(plotly)
+library(tidyverse)
+library(ggplot2)
+library(dplyr)
+library(scales)
+library("readxl")
+```
+
+
+Realizaremos un análisis distinguiendo cada una de las 3 áreas, y por sexo.
+Para hacerlo, consideramos los datos de la siguiente forma: cada fila se trata de una observación, es decir, una persona del grupo control aparecerá 2 veces en la tabla (una de las observaciones en T1 y la otra en T3)
+
+```{r}
+datos_Descriptivo <- read_excel("AnalisisDescriptivo.xlsx")
+#eliminamos la variable fecha del dia puesto que el propio cuestionario la guardó en Marca temporal
+datos_Descriptivo <- datos_Descriptivo[,-3]
+head(datos_Descriptivo)
+```
+
+## Análisis descriptivo
+
+
+### Mujeres
+
+#### Atención: 
+
+
+```{r,echo=FALSE}
+#seleccionamos solo las mujeres
+mujeres<-datos_Descriptivo[datos_Descriptivo$Sexo=="Mujer",]
+p <- mujeres %>%
+  ggplot(aes(x = Grupo,
+             y = Atencion_num,
+             color = Tiempo))+
+  geom_boxplot(width=.5) +
+  ylab("Atención")+
+  geom_hline(yintercept=25, linetype="dashed", color = "black") +
+  geom_hline(yintercept=35, linetype="dashed", color = "black") +
+  #geom_jitter(aes(colour=Tiempo),width=0.1)+
+  theme(panel.background = element_blank())+
+  ggtitle ("Atención Mujeres")
+p 
+```
+
+
+
+
+
+#### Claridad 
+
+Comprendo bien mis estados
+emocionales
+
+
+```{r,echo=FALSE}
+p <- mujeres %>%
+  ggplot(aes(x = Grupo,
+             y = Claridad_num,
+             color = Tiempo))+
+  geom_boxplot(width=.5) +
+  ylab("Claridad")+
+  geom_hline(yintercept=24, linetype="dashed", color = "black") +
+  theme(panel.background = element_blank())+
+  ggtitle ("Claridad Mujeres")
+p
+```
+
+```{r}
+length(mujeres$Claridad_num[mujeres$Tiempo=="T1"& mujeres$Grupo=="Control"])
+length(mujeres$Claridad_num[mujeres$Tiempo=="T1"& mujeres$Grupo=="Intervencion"])
+```
+
+
+
+
+#### Reparación
+```{r,echo=FALSE}
+library(tidyverse)
+p <- mujeres %>%
+  ggplot(aes(x = Grupo,
+             y = Reparacion_num,
+             color = Tiempo))+
+  geom_boxplot(width=.5) +
+  ylab("Reparación")+
+  geom_hline(yintercept=24, linetype="dashed", color = "black")+
+  theme(panel.background = element_blank()) +
+  ggtitle ("Reparación Mujeres")
+p
+```
+
+
+
+
+
+### Hombres
+
+#### Atención: 
+
+Soy capaz de atender a los
+sentimientos de forma adecuada 
+
+```{r,echo=FALSE}
+hombres<-datos_Descriptivo[datos_Descriptivo$Sexo=="Hombre",]
+p <- hombres %>%
+  ggplot(aes(x = Grupo,
+             y = Atencion_num,
+             color = Tiempo))+
+  geom_boxplot(width=.5) +
+  ylab("Atención")+
+  geom_hline(yintercept=22, linetype="dashed", color = "black") +
+  geom_hline(yintercept=32, linetype="dashed", color = "black") +
+  theme(panel.background = element_blank()) +
+  ggtitle ("Atención Hombres")
+
+p 
+```
+
+
+
+#### Claridad 
+
+Comprendo bien mis estados
+emocionales
+
+
+```{r,echo=FALSE}
+p <- hombres %>%
+  ggplot(aes(x = Grupo,
+             y = Claridad_num,
+             color = Tiempo))+
+  geom_boxplot(width=.5) +
+  ylab("Claridad")+
+  geom_hline(yintercept=26, linetype="dashed", color = "black") +
+  theme(panel.background = element_blank())+
+  ggtitle ("Claridad Hombres") 
+
+p
+```
+
+
+
+#### Reparación
+```{r,echo=FALSE}
+p <- hombres %>%
+  ggplot(aes(x = Grupo,
+             y = Reparacion_num,
+             color = Tiempo))+
+  geom_boxplot(width=.5) +
+  ylab("Reparación")+
+  geom_hline(yintercept=24, linetype="dashed", color = "black")+
+  theme(panel.background = element_blank()) +
+  ggtitle ("Reparación Hombres") 
+p
+```
+
+
+
+### IE por estudio
+
+#### Mujeres
+
+```{r}
+p <- mujeres %>%
+  arrange(Atencion_num)%>%
+  mutate(name=factor(Estudio,
+                     levels = 
+                       c("Bioquímica",
+                         "Psicología",
+                         "Enfermería", 
+                         "Fisioterapia",
+                         "Trabajo Social"))) %>%
+  ggplot(aes(x = name,
+             y = Atencion_num,
+             color = Tiempo))+
+  geom_boxplot(width=.5) +
+  xlab("") +
+  ylab("Atención")+
+  geom_hline(yintercept=25, linetype="dashed", color = "black") +
+  geom_hline(yintercept=35, linetype="dashed", color = "black") +
+  theme(panel.background = element_blank()) +
+  ggtitle ("Atención Mujeres") 
+p 
+dim(mujeres[mujeres$Estudio == "Bioquímica"  & mujeres$Tiempo=="T1", ])[1]#mujeres del grupo de control en T1 en BQ
+dim(mujeres[mujeres$Estudio == "Bioquímica"  & mujeres$Tiempo=="T3", ])[1]#mujeres del grupo de control en T3 en BQ
+dim(mujeres[mujeres$Estudio == "Psicología"  & mujeres$Tiempo=="T1", ])[1]#mujeres del grupo de control en T1 en Psicología
+dim(mujeres[mujeres$Estudio == "Enfermería"  & mujeres$Tiempo=="T1", ])[1]#mujeres del grupo de intervención en T1 en Enfermería
+dim(mujeres[mujeres$Estudio == "Fisioterapia"  & mujeres$Tiempo=="T1", ])[1]#mujeres del grupo de intervención en T1 en Fisioterapia
+dim(mujeres[mujeres$Estudio == "Trabajo Social"  & mujeres$Tiempo=="T1", ])[1]#mujeres del grupo de intervención en T1 en Trabajo Social
+```
+
+```{r}
+#T1  vs T3 bioquimicos:contraste 2 medias muestras emparejadas (Test de Wilcoxon)
+wilcox.test(mujeres$Atencion_num[mujeres$Tiempo=="T1" & mujeres$Estudio=="Bioquímica"],mujeres$Atencion_num[mujeres$Tiempo=="T3" & mujeres$Estudio=="Bioquímica"],paired = TRUE)
+```
+
+
+
+```{r}
+p <- mujeres %>%
+  arrange(Claridad_num)%>%
+  mutate(name=factor(Estudio,
+                     levels = 
+                       c("Bioquímica",
+                         "Psicología",
+                         "Enfermería", 
+                         "Fisioterapia",
+                         "Trabajo Social"))) %>%
+  ggplot(aes(x = name,
+             y = Claridad_num,
+             color = Tiempo))+
+  geom_boxplot(width=.5) +
+  xlab("") +
+  ylab("Claridad")+
+  geom_hline(yintercept=24, linetype="dashed", color = "black") +
+  theme(panel.background = element_blank()) +
+  ggtitle ("Claridad Mujeres") 
+p 
+```
+
+
+
+```{r}
+p <- mujeres %>%
+  arrange(Reparacion_num)%>%
+  mutate(name=factor(Estudio,
+                     levels = 
+                       c("Bioquímica",
+                         "Psicología",
+                         "Enfermería", 
+                         "Fisioterapia",
+                         "Trabajo Social"))) %>%
+  ggplot(aes(x = name,
+             y = Reparacion_num,
+             color = Tiempo))+
+  geom_boxplot(width=.5) +
+  xlab("") +
+  ylab("Reparación")+
+  geom_hline(yintercept=24, linetype="dashed", color = "black") +
+  theme(panel.background = element_blank()) +
+  ggtitle ("Reparación Mujeres") 
+
+p 
+
+```
+
+
+#### Hombres
+
+```{r}
+p <- hombres %>%
+  arrange(Atencion_num)%>%
+  mutate(name=factor(Estudio,
+                     levels = 
+                       c("Bioquímica",
+                         "Psicología",
+                         "Enfermería", 
+                         "Fisioterapia",
+                         "Trabajo Social"))) %>%
+  ggplot(aes(x = name,
+             y = Atencion_num,
+             color = Tiempo))+
+  geom_boxplot(width=.5) +
+  xlab("") +
+  ylab("Atención")+
+  geom_hline(yintercept=22, linetype="dashed", color = "black") +
+  geom_hline(yintercept=32, linetype="dashed", color = "black") +
+  theme(panel.background = element_blank())  +
+  ggtitle ("Atención Hombres") 
+p 
+```
+
+
+```{r}
+p <- hombres %>%
+  arrange(Claridad_num)%>%
+  mutate(name=factor(Estudio,
+                     levels = 
+                       c("Bioquímica",
+                         "Psicología",
+                         "Enfermería", 
+                         "Fisioterapia",
+                         "Trabajo Social"))) %>%
+  ggplot(aes(x = name,
+             y = Claridad_num,
+             color = Tiempo))+
+  geom_boxplot(width=.5) +
+  xlab("") +
+  ylab("Claridad")+
+  geom_hline(yintercept=26, linetype="dashed", color = "black") +
+  theme(panel.background = element_blank()) +
+  ggtitle ("Claridad Hombres") 
+
+p 
+
+```
+
+
+```{r}
+p <- hombres %>%
+  arrange(Reparacion_num)%>%
+  mutate(name=factor(Estudio,
+                     levels = 
+                       c("Bioquímica",
+                         "Psicología",
+                         "Enfermería", 
+                         "Fisioterapia",
+                         "Trabajo Social"))) %>%
+  ggplot(aes(x = name,
+             y = Reparacion_num,
+             color = Tiempo))+
+  geom_boxplot(width=.5) +
+  xlab("") +
+  ylab("Reparación")+
+  geom_hline(yintercept=24, linetype="dashed", color = "black") +
+  theme(panel.background = element_blank()) +
+  ggtitle ("Reparación Hombres") 
+p 
+```
+
+```{r}
+dim(hombres[hombres$Estudio == "Bioquímica"  & hombres$Tiempo=="T1", ])[1]#hombres del grupo de control en T1 en BQ
+dim(hombres[hombres$Estudio == "Psicología"  & hombres$Tiempo=="T1", ])[1]#hombres del grupo de control en T1 en Psicología
+dim(hombres[hombres$Estudio == "Enfermería"  & hombres$Tiempo=="T1", ])[1]#hombres del grupo de intervención en T1 en Enfermería
+dim(hombres[hombres$Estudio == "Fisioterapia"  & hombres$Tiempo=="T1", ])[1]#hombres del grupo de intervención en T1 en Fisioterapia
+dim(hombres[hombres$Estudio == "Trabajo Social"  & hombres$Tiempo=="T1", ])[1]#hombres del grupo de intervención en T1 en Trabajo Social
+```
+
