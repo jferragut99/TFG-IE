@@ -451,7 +451,7 @@ lillie.test(hombres$Atencion_num[hombres$Tiempo=="T2" & hombres$Grupo=="Interven
 #lillie.test(hombres$Atencion_num[hombres$Tiempo=="T3" & hombres$Grupo=="Control"])
 lillie.test(hombres$Atencion_num[hombres$Tiempo=="T3" & hombres$Grupo=="Intervencion"])
 ```
-Rechazamos entonces que la Atención en los hombres del grupo Intervención siga una normal en T1, pero asumimos que si la siguen en T2 y en T3.
+Rechazamos entonces que la Atención en los hombres del grupo Intervención siga una normal en T1, pero asumimos que si la siguen en T2 y en T3. El test no aplica para los hombres del grupo control, puesto que son solo 2 observaciones.
 
 
 #T1 control vs T1 intervención:
@@ -551,7 +551,7 @@ lillie.test(hombres$Claridad_num[hombres$Tiempo=="T1" & hombres$Grupo=="Interven
 lillie.test(hombres$Claridad_num[hombres$Tiempo=="T3" & hombres$Grupo=="Intervencion"])
 lillie.test(hombres$Claridad_num[hombres$Tiempo=="T2" & hombres$Grupo=="Intervencion"])
 ```
-Asumimos que la Claridad en los hombres del grupo Intervención siguen una distribución normal en T1, T2 y T3
+Asumimos que la Claridad en los hombres del grupo Intervención siguen una distribución normal en T1, T2 y T3. El test no aplica para los hombres del grupo control, puesto que son solo 2 observaciones.
 
 ```{r}
 #T1-T1: test de Mann-Whitney
@@ -642,7 +642,7 @@ lillie.test(hombres$Reparacion_num[hombres$Tiempo=="T1" & hombres$Grupo=="Interv
 lillie.test(hombres$Reparacion_num[hombres$Tiempo=="T2" & hombres$Grupo=="Intervencion"])
 lillie.test(hombres$Reparacion_num[hombres$Tiempo=="T3" & hombres$Grupo=="Intervencion"])
 ```
-Rechazamos que los hombres del grupo Intervención sigan una normal en T3 y aceptamos que la sigan en T1 y T2.
+Rechazamos que los hombres del grupo Intervención sigan una normal en T3 y aceptamos que la sigan en T1 y T2. El test no aplica para los hombres del grupo control, puesto que son solo 2 observaciones.
 
 ```{r}
 #T1-T1: test de Mann-Whitney
